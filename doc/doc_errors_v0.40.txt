@@ -1,0 +1,1 @@
+p. 12 Reg0 default value: "00100001" instead of "00100010"
