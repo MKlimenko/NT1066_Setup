@@ -1,1 +1,4 @@
 p. 12 Reg0 default value: "00100001" instead of "00100010"
+p. 13 Inconsistent channel numbering: D to A in Reg2-3, A to D in Reg6
+p. 16 Sucpisious channel A frequency
+p. 22 What's the polynom order?
