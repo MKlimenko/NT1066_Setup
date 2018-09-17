@@ -22,3 +22,9 @@ codes_offset = [bin2dec('000000'),bin2dec('011111'),bin2dec('100000'),bin2dec('1
 offset = [74.1, 89.8, 90, 90.3, 104.9];
 EstimatePolyfit(codes_offset, offset, 0:1:bin2dec('111111'), "IQ offset vs codes", "Code, dimensionless", "IQ offset");
 dst = EstimatePolyfit(offset, codes_offset, 74.1:0.01:104.9, "Codes vs IQ offset", "IQ offset", "Code, dimensionless");
+
+%% Channel D LPF cutoff frequency
+codes_d_lpf = [bin2dec('00000000'), bin2dec('00000110'), bin2dec('00000111'), bin2dec('00011011'), bin2dec('00110000'), bin2dec('01000101'), bin2dec('01011010'), bin2dec('01110010'), bin2dec('10001010'), bin2dec('10011111'), bin2dec('10111001'), bin2dec('10111010'), bin2dec('11111111')];
+cutoff_frequency_d = [2.66, 2.97, 3.12, 4.02, 5.05, 6.03, 7.03, 8.12, 9.15, 10.04, 11.16, 11.21, 13.92];
+EstimatePolyfit(codes_d_lpf, cutoff_frequency_d, 0:1:256, "Cutoff frequency vs codes", "Code, dimensionless", "Cutoff frequency, MHz");
+EstimatePolyfit(cutoff_frequency_d, codes_d_lpf, 2.66:0.01:13.92, "Codes vs cutoff frequency", "Cutoff frequency, MHz", "Code, dimensionless");

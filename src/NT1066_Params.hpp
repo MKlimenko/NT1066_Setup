@@ -2,10 +2,12 @@
 #define _NT1066_PARAMS_HPP_
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <map>
+#include <variant>
 #include <vector>
 
 ///<summary>Class for holding the NT1066 parameters</summary>
@@ -29,7 +31,16 @@ struct NT1066_Params {
 		D dst = 0;
 		for (std::size_t i = 0; i < N; ++i)
 			dst |= (arr[i] << i * 8);
-		
+
+		return dst;
+	}
+
+
+	template <typename V, typename T, std::size_t sz>
+	constexpr static auto PolyVal(const std::array<T, sz> &coeff, V val) {
+		double dst{};
+		for (auto it = coeff.rbegin(); it != coeff.rend(); ++it)
+			dst = (dst * val) + *it;
 
 		return dst;
 	}
@@ -84,7 +95,7 @@ struct NT1066_Params {
 		std::uint8_t reserved : 4;
 
 		StatusSetup() : include_channel_d(0), include_channel_c(0), include_channel_b(0), include_channel_a(0), reserved(0) {
-			static_assert(sizeof(StatusSetup) == 1, "Wrong StatusInfo size");
+			static_assert(sizeof(StatusSetup) == 1, "Wrong StatusSetup size");
 		}
 	};
 
@@ -96,7 +107,7 @@ struct NT1066_Params {
 		std::uint8_t temp_l : 8;
 	public:
 		TemperatureSensor() : temp_h(0), reserved(0), temp_l(0) {
-			static_assert(sizeof(TemperatureSensor) == 2, "TemperatureSensor StatusInfo size");
+			static_assert(sizeof(TemperatureSensor) == 2, "Wrong TemperatureSensor size");
 		}
 
 		///<summary>Get chip temperature in degrees Celsius</summary>
@@ -116,7 +127,7 @@ struct NT1066_Params {
 		std::uint8_t reserved : 3;
 
 		OutputSetup() : enable_A(false), enable_B(false), enable_C(false), enable_D(false), enable_clock(false), reserved(0) {
-			static_assert(sizeof(OutputSetup) == 1, "OutputSettings StatusInfo size");
+			static_assert(sizeof(OutputSetup) == 1, "Wrong OutputSettings size");
 		}
 	};
 
@@ -127,7 +138,7 @@ struct NT1066_Params {
 
 	public:
 		ReferenceFrequencySetup() : frequency_khz(0) {
-			static_assert(sizeof(ReferenceFrequencySetup) == 2, "ReferenceFrequency StatusInfo size");
+			static_assert(sizeof(ReferenceFrequencySetup) == 2, "Wrong ReferenceFrequency size");
 		}
 		
 		///<summary>Get oscillator frequency</summary>
@@ -165,7 +176,7 @@ struct NT1066_Params {
 
 	public:
 		TemperatureMeasurementSetup() : system_execute(State::finished), mode(Mode::single), reserved(0) {
-			static_assert(sizeof(TemperatureMeasurementSetup) == 1, "TemperatureMeasurementSetup StatusInfo size");
+			static_assert(sizeof(TemperatureMeasurementSetup) == 1, "Wrong TemperatureMeasurementSetup size");
 		}
 	};
 
@@ -192,7 +203,7 @@ struct NT1066_Params {
 		std::uint8_t reserved : 4;
 
 		constexpr ClockSetup() : source(Source::pll_a), type(Type::lvds), reserved(0) {
-			static_assert(sizeof(ClockSetup) == 1, "ClockSetup StatusInfo size");
+			static_assert(sizeof(ClockSetup) == 1, "Wrong ClockSetup size");
 		}
 	};
 
@@ -202,7 +213,7 @@ struct NT1066_Params {
 		std::uint8_t value = 22;
 
 		ClockCDivider() : value(22) {
-			static_assert(sizeof(ClockCDivider) == 1, "ClockCDivider StatusInfo size");
+			static_assert(sizeof(ClockCDivider) == 1, "Wrong ClockCDivider size");
 		}
 	};
 
@@ -236,7 +247,7 @@ struct NT1066_Params {
 		std::uint8_t reserved : 1;
 
 		ClockLevelSetup() : voltage(VoltageCMOS::v_2_85), level(LevelDC::v_2_85), amplitude(Amplitude::mv_480), reserved(0) {
-			static_assert(sizeof(ClockLevelSetup) == 1, "ClockLevelSetup StatusInfo size");
+			static_assert(sizeof(ClockLevelSetup) == 1, "Wrong ClockLevelSetup size");
 		}
 	};
 
@@ -261,12 +272,12 @@ struct NT1066_Params {
 		std::uint8_t reserved : 4;
 
 		ExternalSamplingFrequencySetup() : type(Type::lvds), terminator_state(false), terminator_value(Value::Ohm_100), reserved(0) {
-			static_assert(sizeof(ExternalSamplingFrequencySetup) == 1, "ExternalSamplingFrequencySetup StatusInfo size");
+			static_assert(sizeof(ExternalSamplingFrequencySetup) == 1, "Wrong ExternalSamplingFrequencySetup size");
 		}
 	};
 
 	///<summary>Channel information for channels A, B and C. Reg14, Reg36, Reg58</summary>
-	struct ChannelInfo {
+	struct WideChannelInfo {
 		enum class FilterAutocalibrationStatus : std::uint8_t {
 			error = 0,
 			completed
@@ -302,15 +313,15 @@ struct NT1066_Params {
 		bool lna_1_enable_status : 1;
 		bool lna_2_enable_status : 1;
 
-		ChannelInfo() : filter_status(FilterAutocalibrationStatus::error), antenna_current_status(AntennaCurrentStatus::valid),
+		WideChannelInfo() : filter_status(FilterAutocalibrationStatus::error), antenna_current_status(AntennaCurrentStatus::valid),
 						antenna_connection(AntennaConnectionIndicator::not_connected), vco_status(VoltageComparatorStatus::valid),
 						pll_status(PLLStatus::not_locked), lna_1_enable_status(false), lna_2_enable_status(false) {
-			static_assert(sizeof(ChannelInfo) == 1, "ChannelInfo StatusInfo size");
+			static_assert(sizeof(WideChannelInfo) == 1, "Wrong WideChannelInfo size");
 		}
 	};
 
 	///<summary>Channel status setup, Reg15, Reg37, Reg59</summary>
-	struct ChannelStatusSetup {
+	struct WideChannelStatusSetup {
 	public:
 		bool include_lpf : 1;
 		bool include_antenna_current : 1;
@@ -319,13 +330,13 @@ struct NT1066_Params {
 		bool include_pll : 1;
 		std::uint8_t reserved : 3;
 
-		ChannelStatusSetup() : include_lpf(true), include_antenna_current(true), include_tuning(true), include_vco(true), include_pll(true), reserved(0) {
-			static_assert(sizeof(ChannelStatusSetup) == 1, "ChannelStatusSetup StatusInfo size");
+		WideChannelStatusSetup() : include_lpf(true), include_antenna_current(true), include_tuning(true), include_vco(true), include_pll(true), reserved(0) {
+			static_assert(sizeof(WideChannelStatusSetup) == 1, "Wrong WideChannelStatusSetup size");
 		}
 	};
 
 	///<summary>Channel sideband mode setup, Reg16, Reg38, Reg60</summary>
-	struct ChannelModeSetup {
+	struct WideChannelModeSetup {
 	public:
 		enum class Mode :std::uint8_t {
 			IQ = 0,
@@ -337,12 +348,13 @@ struct NT1066_Params {
 		Mode mode : 2;
 		std::uint8_t reserved : 6;
 
-		ChannelModeSetup() : mode(Mode::IQ), reserved(0) {
-			static_assert(sizeof(ChannelModeSetup) == 1, "ChannelModeSetup StatusInfo size");
+		WideChannelModeSetup() : mode(Mode::IQ), reserved(0) {
+			static_assert(sizeof(WideChannelModeSetup) == 1, "Wrong WideChannelModeSetup size");
 		}
 	};
 	
-	///<summary>Channel LO frequency in kHz, Reg17-19, Reg39-41, Reg61-63</summary>
+private:
+	///<summary>Channel LO frequency in kHz</summary>
 	struct ChannelLOFrequency {
 	private:
 		std::uint8_t frequency_khz[3];
@@ -352,7 +364,7 @@ struct NT1066_Params {
 			for (int i = 0; i < sizeof(frequency_khz) / sizeof(frequency_khz[0]); ++i)
 				frequency_khz[i] = 0;
 
-			static_assert(sizeof(ChannelLOFrequency) == 3, "ChannelLOFrequency StatusInfo size");
+			static_assert(sizeof(ChannelLOFrequency) == 3, "Wrong ChannelLOFrequency size");
 		}
 
 		///<summary>Get channel LO frequency</summary>
@@ -372,9 +384,12 @@ struct NT1066_Params {
 			std::copy(reinterpret_cast<std::uint8_t*>(&frequency), reinterpret_cast<std::uint8_t*>(&frequency) + sizeof(frequency_khz) / sizeof(frequency_khz[0]), frequency_khz);
 		}
 	};
-
+public:
+	///<summary>Channel LO frequency in kHz, Reg17-19, Reg39-41, Reg61-63</summary>
+	using WideChannelLOFrequency = ChannelLOFrequency;
+	
 	///<summary>Channel PLL mode setup, Reg20, Reg42, Reg64</summary>
-	struct ChannelPLLModeSetup {
+	struct WideChannelPLLModeSetup {
 	public:
 		enum class Mode :std::uint8_t {
 			integer =0,
@@ -384,32 +399,32 @@ struct NT1066_Params {
 		Mode mode : 1;
 		std::uint8_t reserved : 7;
 
-		ChannelPLLModeSetup() : mode(Mode::fractional), reserved(0) {
-			static_assert(sizeof(ChannelPLLModeSetup) == 1, "ChannelPLLModeSetup StatusInfo size");
+		WideChannelPLLModeSetup() : mode(Mode::fractional), reserved(0) {
+			static_assert(sizeof(WideChannelPLLModeSetup) == 1, "Wrong WideChannelPLLModeSetup size");
 		}
 	};
 
 	///<summary>Channel R-divider setup. Flo = (Ftcxo * N) / 2R. Reg21, Reg43, Reg65</summary>
-	struct ChannelRDividerSetup {
+	struct WideChannelRDividerSetup {
 	public:
 		std::uint8_t r_divider : 5;
 		std::uint8_t reserved : 3;
 
-		ChannelRDividerSetup() : r_divider(1), reserved(0) {
-			static_assert(sizeof(ChannelRDividerSetup) == 1, "ChannelRDividerSetup StatusInfo size");
+		WideChannelRDividerSetup() : r_divider(1), reserved(0) {
+			static_assert(sizeof(WideChannelRDividerSetup) == 1, "Wrong WideChannelRDividerSetup size");
 		}
 	};
 
 	///<summary>Channel R-divider setup. Flo = (Ftcxo * N) / 2R. Reg22-23, Reg44-45, Reg66-67</summary>
-	struct ChannelNDividerSetup {
+	struct WideChannelNDividerSetup {
 	private:
 		std::uint16_t n_divider_h : 4;
 		std::uint16_t reserved : 4;
 		std::uint16_t n_divider_l : 8;
 	
 	public:
-		ChannelNDividerSetup() : n_divider_h(1), reserved(0), n_divider_l(62) {
-			static_assert(sizeof(ChannelNDividerSetup) == 2, "ChannelNDividerSetup StatusInfo size");
+		WideChannelNDividerSetup() : n_divider_h(1), reserved(0), n_divider_l(62) {
+			static_assert(sizeof(WideChannelNDividerSetup) == 2, "Wrong WideChannelNDividerSetup size");
 		}
 
 		///<summary>Get channels PLL N-divider from the binary representation</summary>
@@ -425,7 +440,8 @@ struct NT1066_Params {
 		}
 	};
 
-	///<summary>Channel PLL divider ration calculation and subband autoselection system execution. Reg24, Reg46, Reg68</summary>
+private:
+	///<summary>Channel PLL divider ration calculation and subband autoselection system execution</summary>
 	struct ChannelPLLCommand {
 	public:
 		enum class Execute : std::uint8_t {
@@ -437,26 +453,29 @@ struct NT1066_Params {
 		std::uint8_t reserved : 7;
 
 		ChannelPLLCommand() : exec(Execute::finished), reserved(0) {
-			static_assert(sizeof(ChannelPLLCommand) == 1, "ChannelPLLCommand StatusInfo size");
+			static_assert(sizeof(ChannelPLLCommand) == 1, "Wrong ChannelPLLCommand size");
 		}
 	};
+public:
+	///<summary>Channel PLL divider ration calculation and subband autoselection system execution. Reg24, Reg46, Reg68</summary>
+	using WideChannelPLLCommand = ChannelPLLCommand;
 
 	///<summary>Channel LPF cutoff frequency, Reg25-26, Reg47-48, Reg69-70 (I and Q)</summary>
-	struct ChannelLPFFrequency {
+	struct WideChannelLPFFrequency {
 	private:
 		std::uint8_t code : 7;
 		std::uint8_t reserved : 1;
 
 	public:
-		ChannelLPFFrequency() : code(89), reserved(0) {
-			static_assert(sizeof(ChannelLPFFrequency) == 1, "ChannelLPFFrequency StatusInfo size");
+		WideChannelLPFFrequency() : code(89), reserved(0) {
+			static_assert(sizeof(WideChannelLPFFrequency) == 1, "Wrong WideChannelLPFFrequency size");
 		}
 
 		///<summary>Get channels low-pass filter frequency</summary>
 		///<returns>Approximate low-pass filter frequency</returns>
 		double GetFrequency() {
 			constexpr double a = -0.000377609609382721; constexpr double b = 0.265096813531143; constexpr double c = 9.41220632948036;
-			return (std::pow(code, 2) * a + code * b + c) * 1e6;
+			return PolyVal(std::array{ c, b, a }, code) * 1e6;
 		}
 
 		///<summary>Set channels low-pass filter frequency</summary>
@@ -465,12 +484,12 @@ struct NT1066_Params {
 			value /= 1e6;
 			constexpr double z = 0.000877477095680409; constexpr double a = -0.0246285187050189; constexpr double b = 4.18233786512722; constexpr double c = -38.2239046300842;
 
-			code = static_cast<std::uint8_t>(std::pow(value, 3) * z + std::pow(value, 2) * a + value * b + c);
+			code = static_cast<std::uint8_t>(PolyVal<std::uint8_t>(std::array{ c, b, a, z }, code));
 		}
 	};
 
 	///<summary>Channel LPF autocalibration system execution, Reg27, Reg49, Reg71</summary>
-	struct ChannelLPFAutocalibration {
+	struct WideChannelLPFAutocalibration {
 		enum class Execution : std::uint8_t {
 			finished = 0,
 			start
@@ -479,13 +498,13 @@ struct NT1066_Params {
 		Execution execution : 1;
 		std::uint8_t reserved : 7;
 
-		ChannelLPFAutocalibration() : execution(Execution::finished), reserved(0) {
-			static_assert(sizeof(ChannelLPFAutocalibration) == 1, "ChannelLPFAutocalibration StatusInfo size");
+		WideChannelLPFAutocalibration() : execution(Execution::finished), reserved(0) {
+			static_assert(sizeof(WideChannelLPFAutocalibration) == 1, "Wrong WideChannelLPFAutocalibration size");
 		}
 	};
 
 	///<summary>Channel output setup, Reg28, Reg50, Reg72</summary>
-	struct ChannelOutputSetup {
+	struct WideChannelOutputSetup {
 	public:
 		enum class Type : std::uint8_t {
 			analog_differential = 0,
@@ -517,36 +536,36 @@ struct NT1066_Params {
 		ADCType adc_type : 2;
 		std::uint8_t reserved : 2;
 		
-		ChannelOutputSetup() : output_type(Type::adc_sg_mg), if_gain_mode(IFGainMode::automatic), adc_logic(ADCLogic::vcc), adc_type(ADCType::rising_edge), reserved(0) {
-			static_assert(sizeof(ChannelOutputSetup) == 1, "ChannelOutputSetup StatusInfo size");
+		WideChannelOutputSetup() : output_type(Type::adc_sg_mg), if_gain_mode(IFGainMode::automatic), adc_logic(ADCLogic::vcc), adc_type(ADCType::rising_edge), reserved(0) {
+			static_assert(sizeof(WideChannelOutputSetup) == 1, "Wrong WideChannelOutputSetup size");
 		}
 	};
 
 
 	///<summary>Channel IFA gain info, Reg29-32, Reg51-54, Reg73-76 (I and Q)</summary>
-	struct ChannelIFAInfo {
+	struct WideChannelIFAInfo {
 		std::uint8_t value_h : 2;
 		std::uint8_t reserved : 6;
 		std::uint8_t value_l : 8;
 
-		ChannelIFAInfo() : value_h(0), value_l(0), reserved(0) {
-			static_assert(sizeof(ChannelIFAInfo) == 2, "ChannelIFAInfo StatusInfo size");
+		WideChannelIFAInfo() : value_h(0), value_l(0), reserved(0) {
+			static_assert(sizeof(WideChannelIFAInfo) == 2, "Wrong WideChannelIFAInfo size");
 		}
 
 		// Get or set?
-		template<ChannelOutputSetup::IFGainMode mode>
+		template<WideChannelOutputSetup::IFGainMode mode>
 		double GetValue() {
 			std::uint16_t value = SwapEndian(*reinterpret_cast<std::uint16_t*>(this)) & 0xFFFF;
-			if constexpr (mode == ChannelOutputSetup::IFGainMode::manual) {
+			std::array<double, 4> coefficients{};
+			if constexpr (mode == WideChannelOutputSetup::IFGainMode::manual) {
 				constexpr double z = -1.86117568182497e-07; constexpr double a = 0.000311948298901763; constexpr double b = -0.0588099694153401; constexpr double c = 0.618124591549162;
-				
-				return std::pow(value, 3) * z + std::pow(value, 2) * a + value * b + c;
+				coefficients = { c, b, a, z };
 			}
 			else {
 				constexpr double z = 4.54023397427047e-08; constexpr double a = -5.94978263979007e-05; constexpr double b = 0.107224531610339; constexpr double c = 0.0396198163256446;
-				
-				return std::pow(value, 3) * z + std::pow(value, 2) * a + value * b + c;
+				coefficients = { c, b, a, z };
 			}
+			return PolyVal(coefficients, value);
 		}
 	};
 
@@ -562,7 +581,7 @@ struct NT1066_Params {
 		std::uint8_t thresholds : 4;
 	
 		AntennaCurrentSetup() : behaviour(ShortCircuitBehaviour::limit_current), reserved(0), thresholds(3) {
-			static_assert(sizeof(AntennaCurrentSetup) == 1, "AntennaCurrentSetup StatusInfo size");
+			static_assert(sizeof(AntennaCurrentSetup) == 1, "Wrong AntennaCurrentSetup size");
 		}
 
 		std::pair<double, double> GetThresholds() {
@@ -617,30 +636,177 @@ struct NT1066_Params {
 		std::uint8_t reserved : 4;
 
 		LNASetup() : lna_choice(LNAChoice::lna_1), lna_enable(LNAEnable::enbale), antenna_detector(AntennaDetector::enable), lna_autoselection(LNAAutoselection::permitted), reserved(0) {
-			static_assert(sizeof(LNASetup) == 1, "LNASetup StatusInfo size");
+			static_assert(sizeof(LNASetup) == 1, "Wrong LNASetup size");
 		}
 	};
 
+	///<summary>IQ phase correction, Reg35, Reg57, Reg79</summary>
 	struct IQCorrectionSetup {
-		std::uint8_t value : 6;
+		std::uint8_t code : 6;
 		std::uint8_t reserved : 2;
 
-		IQCorrectionSetup() : value(31), reserved(0) {
-			static_assert(sizeof(IQCorrectionSetup) == 1, "IQCorrectionSetup StatusInfo size");
+		IQCorrectionSetup() : code(31), reserved(0) {
+			static_assert(sizeof(IQCorrectionSetup) == 1, "Wrong IQCorrectionSetup size");
 		}
 
 		double GetCorrection() {
 			constexpr double z = 0.000240781570598727; constexpr double a = -0.0231654734280227; constexpr double b = 0.992651686614838; constexpr double c = 74.1000160441226;
-			
-			return std::pow(value, 3) * z + std::pow(value, 2) * a + value * b + c;
+
+			return PolyVal(std::array{ c, b, a, z, }, code);
 		}
 
 		void SetCorrection(double value) {
 			constexpr double z = -0.00802252790695702; constexpr double a = 2.16082075270223; constexpr double b = -190.051475082190; constexpr double c = 5482.27616690550;
 
-			value = static_cast<std::uint8_t>(std::pow(value, 3) * z + std::pow(value, 2) * a + value * b + c);
+			code = static_cast<std::uint8_t>(PolyVal(std::array{ c, b, a, z, }, code));
 		}
 	};
+
+	///<summary>Channel information for channel D. Reg80</summary>
+	struct NarrowChannelInfo {
+		using VoltageComparatorStatus = WideChannelInfo::VoltageComparatorStatus;
+		using PLLStatus = WideChannelInfo::PLLStatus;
+
+		PLLStatus pll_status : 1;
+		VoltageComparatorStatus vco_status : 2;
+		std::uint8_t reserved : 5;
+
+		NarrowChannelInfo() : vco_status(VoltageComparatorStatus::valid), pll_status(PLLStatus::not_locked), reserved(0) {
+			static_assert(sizeof(NarrowChannelInfo) == 1, "Wrong NarrowChannelInfo size");
+		}
+	};
+
+	///<summary>Channel D RF gain status, Reg81</summary>
+	struct NarrowChannelRFGainStatus {
+	private:
+		std::uint16_t status : 4; // Not documented yet
+		std::uint16_t reserved : 4;
+
+	public:
+		NarrowChannelRFGainStatus() : status(1), reserved(0) {
+			static_assert(sizeof(NarrowChannelRFGainStatus) == 2, "Wrong NarrowChannelRFGainStatus size");
+		}
+
+		///<summary>Get channel RF gain status</summary>
+		///<returns>RF gain status</returns>
+		std::uint8_t GetStatus() {
+			return status;
+		}
+
+		///<summary>Set channel RF gain status</summary>
+		///<param name = 'value'>RF gain status</param>
+		void SetStatus(std::uint8_t value) {
+			status = value;
+		}
+	};
+
+
+private:
+	///<summary>Channel IFA gain status. Reg82-83, Reg84-85</summary>
+	struct NarrowChannelIFAGainStatus {
+	protected:
+		std::uint16_t status_h : 1;
+		std::uint16_t reserved : 7;
+		std::uint16_t status_l : 8;
+
+	public:
+		NarrowChannelIFAGainStatus() : status_h(0), reserved(0), status_l(0) {
+			static_assert(sizeof(NarrowChannelIFAGainStatus) == 2, "Wrong NarrowChannelIFAGain size");
+		}
+
+		///<summary>Get channel IFA_I gain status</summary>
+		///<returns>IFA_I gain status</returns>
+		std::uint16_t GetStatus() {
+			return SwapEndian(*reinterpret_cast<std::uint16_t*>(this)) & 0xFFF;
+		}
+
+		///<summary>Set channel IFA_I gain status</summary>
+		///<param name = 'value'>IFA_I gain status</param>
+		void SetStatus(std::uint16_t value) {
+			*reinterpret_cast<std::uint16_t*>(this) = SwapEndian(value);
+		}
+	};
+
+public:
+	using NarrowChannelIFA_IGainStatus = NarrowChannelIFAGainStatus;
+	using NarrowChannelIFA_QGainStatus = NarrowChannelIFAGainStatus;
+
+	///<summary>Channel D status setup, Reg86</summary>
+	struct NarrowChannelStatusSetup {
+	public:
+		bool include_tuning : 1;
+		bool include_vco : 1;
+		bool include_pll : 1;
+		std::uint8_t reserved : 5;
+
+		NarrowChannelStatusSetup() : include_tuning(true), include_vco(true), include_pll(true), reserved(0) {
+			static_assert(sizeof(NarrowChannelStatusSetup) == 1, "Wrong NarrowChannelStatusSetup size");
+		}
+	};
+
+	///<summary>Channel D LO frequency in kHz, Reg87-89</summary>
+	using WideChannelLOFrequency = ChannelLOFrequency;
+
+	///<summary>Channel PLL divider ration calculation and subband autoselection system execution. Reg90</summary>
+	using WideChannelPLLCommand = ChannelPLLCommand;
+
+	///<summary>Channel D RF gain setup, Reg91</summary>
+	struct NarrowChannelRFGainSetup {
+	public:
+		enum class Mode : std::uint8_t {
+			manual = 0,
+			automatic,
+			external,
+			unused,
+		};
+
+		enum class FrequencyBand : std::uint8_t {
+			FM = 0,
+			VHF,
+			UHF,
+			L,
+			S,
+			latest
+		};
+
+		Mode mode : 2;
+		std::uint8_t : 1;
+		std::uint8_t gain_code : 4;
+		std::uint8_t : 1;
+
+		NarrowChannelRFGainSetup() : mode(Mode::manual), gain_code(0b1110) {
+			static_assert(sizeof(NarrowChannelRFGainSetup) == 1, "Wrong NarrowChannelRFGainSetup size");
+		}
+
+		auto GetRFGain(FrequencyBand band = FrequencyBand::L) {
+			return codes.at(static_cast<std::size_t>(band)).at(gain_code);
+		}
+
+		void SetRFGain(double gain, FrequencyBand band = FrequencyBand::L) {
+			auto& values = codes.at(static_cast<std::size_t>(band));
+			
+			double delta = 100.0;
+			std::uint8_t index = 0;
+			for (auto i = 0; i < values.size(); ++i) {
+				auto cur_delta = std::abs(gain - values[i]);
+				if (cur_delta < delta) {
+					delta = cur_delta;
+					index = static_cast<std::uint8_t>(i);
+				}
+			}
+			gain_code = index;
+		}
+
+	private:
+		constexpr static std::array codes {
+			std::array {	-7.7,	-5.3,	-2.0,	0.6,	3.2,	6.5,	10.2,	13.1,	18.6,	20.6,	23.5,	26.1,	29.1,	31.3,	31.3,	31.3,	},	// FM
+			std::array {	-11.8,	-9.6,	-6.5,	-4.0,	-1.5,	1.8,	5.4,	8.3,	14.6,	17.3,	20.2,	22.9,	26.1,	28.2,	28.2,	28.2,	},	// VHF
+			std::array {	-4.9,	-2.9,	-0.7,	1.5,	3.4,	4.3,	6.2,	8.9,	16.1,	17.0,	19.2,	21.8,	23.5,	26.0,	26.0,	26.0,	},	// UHF
+			std::array {	-6.8,	-4.7,	-2.5,	-0.1,	2.2,	4.1,	6.8,	9.8,	14.1,	16.9,	19.7,	22.5,	24.9,	27.5,	27.5,	27.5,	},	// L
+			std::array {	-6.4,	-4.1,	-1.7,	0.9,	3.5,	4.6,	6.7,	9.5,	13.5,	14.9,	17.5,	20.3,	22.9,	25.5,	25.5,	25.5,	}	// S
+		};
+	};
+
 };
 #pragma pack (pop)
 
